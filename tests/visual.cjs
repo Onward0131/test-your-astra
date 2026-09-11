@@ -1,0 +1,48 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
+const Visual=require('../visual.cjs');
+const Transport=require('../probe.cjs');
+const {createRuntime}=require('../runtime.cjs');
+const root=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'astra-visual-'));
+const staticHtml='<!doctype html><html><body><svg width="1200" height="800"><rect width="1200" height="800" fill="#ffe"/><circle cx="600" cy="400" r="120" fill="teal"/></svg></body></html>';
+const profile={id:'default',name:'local-mock',baseUrl:'',model:'mock-vision',protocol:'chat',tokenField:'max_completion_tokens',keyOptional:true};
+let valid=true,requests=0;
+const mock=http.createServer(async(req,res)=>{
+  let raw='';for await(const c of req)raw+=c;
+  const payload=JSON.parse(raw);assert.equal(payload.messages[1].content.filter(x=>x.type==='image_url').length,3);requests++;
+  const answer=valid?JSON.stringify({confidence:.9,summary:'mock evidence',dimensions:Visual.DIMENSIONS.map(d=>({key:d.key,score:d.max,evidence:'fixture'})),issues:[]}):'bad JSON';
+  res.setHeader('content-type','application/json');res.end(JSON.stringify({model:profile.model,choices:[{message:{content:answer},finish_reason:'stop'}]}));
+});
+async function waitFor(fn){for(let i=0;i<100;i++){if(fn())return;await new Promise(r=>setTimeout(r,30));}throw Error('Timed out');}
+(async()=>{
+  const blank=await Visual.captureArtifact('<!doctype html><body></body>',path.join(root,'blank'),true);
+  assert.equal(blank.nonBlank,false);assert.equal(blank.hasMotion,false);
+  const still=await Visual.captureArtifact(staticHtml,path.join(root,'still'),true);
+  assert.equal(still.nonBlank,true);assert.equal(still.hasMotion,false);
+  const broken=await Visual.captureArtifact(staticHtml+'<script>throw Error("fixture-script-error")</script>',path.join(root,'broken'),true);
+  assert(broken.errors.some(x=>x.includes('fixture-script-error')));
+  await new Promise(r=>mock.listen(0,'127.0.0.1',r));profile.baseUrl='http://127.0.0.1:'+mock.address().port;
+  const judgment=await Visual.evaluateVision({},still,path.join(root,'still'),profile,'',null,Transport);
+  assert.equal(judgment.score,100);assert.equal(judgment.status,'fail');
+  valid=false;
+  await assert.rejects(()=>Visual.evaluateVision({},still,path.join(root,'still'),profile,'',null,Transport),/JSON/);
+  const originalCapture=Visual.captureArtifact;
+  Visual.captureArtifact=async(source,folder)=>{fs.mkdirSync(folder,{recursive:true});for(const frame of still.frames)fs.copyFileSync(path.join(root,'still',frame),path.join(folder,frame));return {...still,hasMotion:true}};
+  const runtimeDir=path.join(root,'runtime');
+  const options={dataDir:runtimeDir,runProbe:async()=>{},defaults:profile,...Transport,validate:()=>{}};
+  let runtime=createRuntime(options);await runtime.ready;
+  await runtime.saveProfile({...profile,keyOptional:true,apiKey:'',remember:false});
+  runtime.saveEvaluator({profileId:'default',enabled:false});
+  const record=runtime.savePasted('pelican',staticHtml);
+  const job=runtime.enqueueAssessment(record.id);
+  await waitFor(()=>['done','error'].includes(job.status));
+  assert.equal(record.autoEvaluation.status,'unavailable');
+  const saved=JSON.parse(fs.readFileSync(path.join(runtimeDir,'artifacts',record.id,'evaluation.json')));
+  assert.equal(saved.status,'unavailable');
+  runtime.close();
+  const savedRecords=JSON.parse(fs.readFileSync(path.join(runtimeDir,'records.json')));savedRecords[0].autoEvaluation={status:'evaluating'};
+  fs.writeFileSync(path.join(runtimeDir,'records.json'),JSON.stringify(savedRecords));
+  runtime=createRuntime(options);await runtime.ready;
+  assert.equal(runtime.records()[0].autoEvaluation.status,'unavailable');runtime.close();
+  Visual.captureArtifact=originalCapture;
+  console.log(JSON.stringify({passed:true,checks:['blank rejected','static motion rejected despite mock score100','script error captured','invalid JSON rejected','failure persisted','restart interruption recovered'],localMockRequests:requests,root}));
+})().catch(e=>{console.error(e.stack);process.exitCode=1;}).finally(()=>mock.close());

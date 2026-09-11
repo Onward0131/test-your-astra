@@ -1,0 +1,33 @@
+# Dependencies and local tooling
+node_modules/
+runtime/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.playwright-cli/
+coverage/
+dist/
+*.log
+*.tmp
+*.zip
+
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+settings.json
+portable-state.json
+*.pem
+*.key
+
+# Private records, generated HTML, screenshots and exports
+records.json
+queue.json
+archive/
+artifacts/
+data/
+test-results/
+playwright-report/
+model-probe-*.json
+model-probe-*.csv

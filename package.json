@@ -1,0 +1,38 @@
+{
+  "version": "4.1.0",
+  "private": true,
+  "dependencies": {
+    "playwright-core": "1.62.1",
+    "sharp": "0.35.4"
+  },
+  "description": "测试你的astra模型是否降智：本机双题并行检测、自动视觉评审、画风对照与后台计划",
+  "name": "test-your-astra",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "node probe.cjs serve",
+    "build": "node scripts/build.cjs",
+    "check": "node scripts/check.cjs",
+    "test": "node scripts/test.cjs",
+    "test:visual": "node tests/visual.cjs",
+    "test:windows": "node tests/windows.cjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Onward0131/test-your-astra.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Onward0131/test-your-astra/issues"
+  },
+  "homepage": "https://github.com/Onward0131/test-your-astra#readme",
+  "keywords": [
+    "astra",
+    "llm",
+    "benchmark",
+    "model-evaluation",
+    "local-first",
+    "svg"
+  ]
+}

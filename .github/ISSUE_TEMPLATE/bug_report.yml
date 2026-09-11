@@ -1,0 +1,30 @@
+name: 问题反馈
+description: 报告可复现的工具问题或判定错误
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: "请勿提交Key、请求头或完整settings.json。安全漏洞请使用私密报告。"
+  - type: input
+    id: environment
+    attributes:
+      label: 环境
+      description: 工具版本、系统、Node.js版本和浏览器
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤或脱敏样例
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 脱敏日志或截图

@@ -1,0 +1,27 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const sharp=require('sharp'),A=require('../appearance.cjs'),I=require('../insights.cjs'),B=require('../benchmark.cjs');
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'astra-appearance-'));
+(async()=>{
+  const a=path.join(dir,'a.png'),b=path.join(dir,'b.png');
+  await sharp({create:{width:240,height:160,channels:3,background:'#f0eed4'}}).png().toFile(a);
+  await sharp({create:{width:240,height:160,channels:3,background:'#16024b'}}).png().toFile(b);
+  const fa=await A.fingerprint(a),fb=await A.fingerprint(b);
+  const record=(id,fingerprint,score=85,status='pass')=>({id,task:'pelican',judgment:{status:'artifact'},appearanceFingerprint:fingerprint,autoEvaluation:{version:'visual-1.2',judgeModel:'fixture',score,status,dimensions:[{key:'riding',score:22,max:30}]}});
+  const ref=record('ref',fa),same=record('same',fa),different=record('different',fb);
+  assert.equal(A.distance(fa,fa).value,0);
+  assert.equal(A.compare([same],[ref]).changed,0);
+  assert.equal(A.compare([different],[ref]).changed,1);
+  assert.equal(A.compare([different],[]).compared,0);
+  assert.equal(A.compare([ref],[ref]).rows[0].status,'reference');
+  assert.equal(A.compare([ref],[ref]).compared,0);
+  const old=[record('old',fa,83)],current=[same,different,record('uncertain',fb,5,'uncertain')];
+  assert.equal(B.summarize(current).pelican.meanScore,85);
+  const insight=I.describe(current,old,{name:'fixture baseline'});
+  assert.equal(insight.average,85);assert.equal(insight.delta,2);assert.equal(insight.comparable,true);
+  assert.equal(different.autoEvaluation.score,85);
+  old[0].autoEvaluation.version='visual-1.1';
+  assert.equal(I.describe(current,old).comparable,false);
+  assert.equal(I.describe(current,old,null,{enabled:false}).appearance.disabled,true);
+  console.log('Appearance, unknown scores and independent quality comparison passed.');
+})().catch(e=>{console.error(e.stack);process.exitCode=1}).finally(()=>fs.rmSync(dir,{recursive:true,force:true}));
