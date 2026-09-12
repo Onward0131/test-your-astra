@@ -1,4 +1,5 @@
 'use strict';
+require('./build-browser.cjs');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const read=name=>fs.readFileSync(path.join(root,name),'utf8').replace(/\r\n/g,'\n');

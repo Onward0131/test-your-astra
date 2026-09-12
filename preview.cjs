@@ -1,3 +1,7 @@
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.ModelProbePreview = factory();
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
 'use strict';
 const escapeHtml = text => String(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const WIDTH = 1200, HEIGHT = 800;
@@ -10,4 +14,6 @@ function sceneDocument(source) {
 function playerDocument(source, controls = false) {
   return '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>鹈鹕动画播放器</title><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#edf2f0}#stage{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}#scene{width:1200px;height:800px;border:0;transform-origin:0 0;position:absolute;left:50%;top:50%;background:#fff}#bar{position:absolute;z-index:2;top:15px;right:15px;display:flex;gap:8px}button{padding:9px 13px;background:#102521e8;color:white;border:1px solid #ffffff3b;border-radius:7px;cursor:pointer;font:14px system-ui}</style></head><body><div id="stage"><iframe id="scene" sandbox="allow-scripts" referrerpolicy="no-referrer" srcdoc="' + escapeHtml(sceneDocument(source)) + '"></iframe></div>' + (controls ? '<div id="bar"><button id="toggle">暂停</button><button id="replay">重播</button><button id="full">全屏</button></div>' : '') + '<script>(()=>{const f=document.getElementById("scene"),stage=document.getElementById("stage");let paused=false,mode="fit";const fit=()=>{const scale=mode==="fill"?Math.max(stage.clientWidth/1200,stage.clientHeight/800):Math.min(stage.clientWidth/1200,stage.clientHeight/800);f.style.transform="translate(-50%,-50%) scale("+scale+")";f.style.transformOrigin="center center"};new ResizeObserver(fit).observe(stage);fit();const action=data=>{if(data.action==="pause"){paused=data.paused;f.contentWindow.postMessage({type:"probe-playback",paused},"*")}if(data.action==="replay"){f.srcdoc=f.srcdoc;paused=false}if(data.action==="fit"){mode=data.mode;fit()}};addEventListener("message",e=>{if(e.source===parent&&e.data?.type==="probe-player")action(e.data)});const toggle=document.getElementById("toggle");if(toggle){toggle.onclick=()=>{action({action:"pause",paused:!paused});toggle.textContent=paused?"播放":"暂停"};document.getElementById("replay").onclick=()=>{action({action:"replay"});toggle.textContent="暂停"};document.getElementById("full").onclick=()=>document.documentElement.requestFullscreen()}})();</script></body></html>';
 }
-module.exports = { sceneDocument, playerDocument, WIDTH, HEIGHT };
+return { sceneDocument, playerDocument, WIDTH, HEIGHT };
+
+});
