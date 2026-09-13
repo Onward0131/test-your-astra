@@ -87,6 +87,7 @@ npm test
 
 - 前端源文件：`src/tool.template.html`、`src/app.js`；构建生成提交到仓库的`tool.html`。
 - 核心模块：`core.cjs`、`benchmark.cjs`、`queue.cjs`、`appearance.cjs`等可独立引入。
+- 浏览器/站内接入：`browser/model-probe.mjs`提供同源Key检测、Chat/Responses流解析和隔离播放器，见[集成说明](docs/BROWSER_INTEGRATION.md)。
 - 架构和测试方式见[开发说明](docs/DEVELOPMENT.md)。
 - 问题与功能建议请使用[Issues](https://github.com/Onward0131/test-your-astra/issues)；提交代码前阅读[贡献规范](CONTRIBUTING.md)。
 
