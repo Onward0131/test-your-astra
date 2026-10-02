@@ -3,7 +3,7 @@
   "private": true,
   "dependencies": {
     "playwright-core": "1.62.1",
-    "sharp": "0.35.4"
+    "sharp": "0.35.5"
   },
   "description": "测试你的astra模型是否降智：本机双题并行检测、自动视觉评审、画风对照与后台计划",
   "name": "test-your-astra",
